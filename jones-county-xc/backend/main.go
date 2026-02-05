@@ -1,57 +1,39 @@
 package main
 
 import (
+	"database/sql"
+	"log"
 	"net/http"
+	"strconv"
+
+	"jones-county-xc/backend/db"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	_ "github.com/go-sql-driver/mysql"
 )
 
-type Athlete struct {
-	ID             int    `json:"id"`
-	Name           string `json:"name"`
-	Grade          int    `json:"grade"`
-	PersonalRecord string `json:"personalRecord"`
-}
-
-var athletes = []Athlete{
-	{ID: 1, Name: "Sarah Johnson", Grade: 11, PersonalRecord: "18:45"},
-	{ID: 2, Name: "Mike Chen", Grade: 10, PersonalRecord: "17:32"},
-	{ID: 3, Name: "Emma Williams", Grade: 12, PersonalRecord: "19:15"},
-	{ID: 4, Name: "James Rodriguez", Grade: 9, PersonalRecord: "20:08"},
-}
-
-type Meet struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Date     string `json:"date"`
-	Location string `json:"location"`
-}
-
-var meets = []Meet{
-	{ID: 1, Name: "County Championship", Date: "2026-03-15", Location: "Jones County Park"},
-	{ID: 2, Name: "Regional Invitational", Date: "2026-03-22", Location: "Riverside Stadium"},
-	{ID: 3, Name: "State Qualifier", Date: "2026-04-05", Location: "Capital City Course"},
-}
-
-type Result struct {
-	ID        int    `json:"id"`
-	AthleteID int    `json:"athleteId"`
-	MeetID    int    `json:"meetId"`
-	Time      string `json:"time"`
-	Place     int    `json:"place"`
-}
-
-var results = []Result{
-	{ID: 1, AthleteID: 1, MeetID: 1, Time: "19:02", Place: 3},
-	{ID: 2, AthleteID: 2, MeetID: 1, Time: "17:45", Place: 1},
-	{ID: 3, AthleteID: 3, MeetID: 1, Time: "19:30", Place: 5},
-	{ID: 4, AthleteID: 4, MeetID: 1, Time: "20:15", Place: 8},
-	{ID: 5, AthleteID: 1, MeetID: 2, Time: "18:50", Place: 2},
-	{ID: 6, AthleteID: 2, MeetID: 2, Time: "17:38", Place: 1},
-}
+var queries *db.Queries
 
 func main() {
+	// Connect to MySQL
+	// For production, use environment variables instead of hardcoded credentials
+	dsn := "xc_app:xc_password@tcp(localhost:3306)/jones_county_xc?parseTime=true"
+	database, err := sql.Open("mysql", dsn)
+	if err != nil {
+		log.Fatal("Failed to connect to database:", err)
+	}
+	defer database.Close()
+
+	// Verify connection
+	if err := database.Ping(); err != nil {
+		log.Fatal("Failed to ping database:", err)
+	}
+	log.Println("Connected to MySQL database")
+
+	// Initialize sqlc queries
+	queries = db.New(database)
+
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
@@ -72,17 +54,67 @@ func main() {
 		})
 	})
 
-	r.GET("/api/athletes", func(c *gin.Context) {
-		c.JSON(http.StatusOK, athletes)
-	})
+	// Athletes endpoints
+	r.GET("/api/athletes", listAthletes)
+	r.GET("/api/athletes/:id", getAthlete)
 
-	r.GET("/api/meets", func(c *gin.Context) {
-		c.JSON(http.StatusOK, meets)
-	})
-
-	r.GET("/api/results", func(c *gin.Context) {
-		c.JSON(http.StatusOK, results)
-	})
+	// Meets endpoints
+	r.GET("/api/meets", listMeets)
+	r.GET("/api/meets/:id/results", getMeetResults)
 
 	r.Run(":8080")
+}
+
+func listAthletes(c *gin.Context) {
+	athletes, err := queries.ListAthletes(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, athletes)
+}
+
+func getAthlete(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseInt(idParam, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid athlete id"})
+		return
+	}
+
+	athlete, err := queries.GetAthlete(c.Request.Context(), int32(id))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "athlete not found"})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, athlete)
+}
+
+func listMeets(c *gin.Context) {
+	meets, err := queries.ListMeets(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, meets)
+}
+
+func getMeetResults(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseInt(idParam, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid meet id"})
+		return
+	}
+
+	results, err := queries.GetResultsByMeet(c.Request.Context(), int32(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, results)
 }

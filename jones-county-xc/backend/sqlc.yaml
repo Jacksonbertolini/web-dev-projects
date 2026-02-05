@@ -1,0 +1,35 @@
+version: "2"
+sql:
+  - engine: "mysql"
+    queries: "db/queries"
+    schema: "db/schema"
+    gen:
+      go:
+        package: "db"
+        out: "db"
+        emit_json_tags: true
+        emit_prepared_queries: false
+        emit_interface: true
+        emit_exact_table_names: false
+        overrides:
+          - db_type: "varchar"
+            nullable: true
+            go_type:
+              type: "string"
+              pointer: true
+          - db_type: "text"
+            nullable: true
+            go_type:
+              type: "string"
+              pointer: true
+          - db_type: "int"
+            nullable: true
+            go_type:
+              type: "int32"
+              pointer: true
+          - db_type: "timestamp"
+            nullable: true
+            go_type:
+              import: "time"
+              type: "Time"
+              pointer: true
