@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
 
 async function fetchAthletes() {
-  const response = await fetch('http://localhost:8080/api/athletes')
+  const response = await fetch('/api/athletes')
   if (!response.ok) {
     throw new Error('Failed to fetch athletes')
   }
