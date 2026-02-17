@@ -55,15 +55,15 @@ func main() {
 	})
 
 	// Athletes endpoints
-	r.GET("/api/athletes", listAthletes)
-	r.GET("/api/athletes/:id", getAthlete)
+	r.GET("/module2/api/athletes", listAthletes)
+	r.GET("/module2/api/athletes/:id", getAthlete)
 
 	// Results endpoints
-	r.GET("/api/results", listResults)
+	r.GET("/module2/api/results", listResults)
 
 	// Meets endpoints
-	r.GET("/api/meets", listMeets)
-	r.GET("/api/meets/:id/results", getMeetResults)
+	r.GET("/module2/api/meets", listMeets)
+	r.GET("/module2/api/meets/:id/results", getMeetResults)
 
 	r.Run(":8080")
 }
