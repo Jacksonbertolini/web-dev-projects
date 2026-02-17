@@ -1,3 +1,7 @@
+-- name: ListResults :many
+SELECT id, athlete_id, meet_id, time, place, created_at FROM results
+ORDER BY created_at DESC;
+
 -- name: GetResult :one
 SELECT * FROM results WHERE id = ?;
 

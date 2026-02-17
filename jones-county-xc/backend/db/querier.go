@@ -26,6 +26,7 @@ type Querier interface {
 	ListAthletes(ctx context.Context) ([]Athlete, error)
 	ListAthletesByGrade(ctx context.Context, grade int8) ([]Athlete, error)
 	ListMeets(ctx context.Context) ([]Meet, error)
+	ListResults(ctx context.Context) ([]Result, error)
 	ListUpcomingMeets(ctx context.Context) ([]Meet, error)
 	UpdateAthlete(ctx context.Context, arg UpdateAthleteParams) error
 	UpdateMeet(ctx context.Context, arg UpdateMeetParams) error

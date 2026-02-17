@@ -58,6 +58,9 @@ func main() {
 	r.GET("/api/athletes", listAthletes)
 	r.GET("/api/athletes/:id", getAthlete)
 
+	// Results endpoints
+	r.GET("/api/results", listResults)
+
 	// Meets endpoints
 	r.GET("/api/meets", listMeets)
 	r.GET("/api/meets/:id/results", getMeetResults)
@@ -92,6 +95,15 @@ func getAthlete(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, athlete)
+}
+
+func listResults(c *gin.Context) {
+	results, err := queries.ListResults(c.Request.Context())
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, results)
 }
 
 func listMeets(c *gin.Context) {

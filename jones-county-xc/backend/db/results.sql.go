@@ -10,6 +10,41 @@ import (
 	"database/sql"
 )
 
+const listResults = `-- name: ListResults :many
+SELECT id, athlete_id, meet_id, time, place, created_at FROM results
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListResults(ctx context.Context) ([]Result, error) {
+	rows, err := q.db.QueryContext(ctx, listResults)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Result
+	for rows.Next() {
+		var i Result
+		if err := rows.Scan(
+			&i.ID,
+			&i.AthleteID,
+			&i.MeetID,
+			&i.Time,
+			&i.Place,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createResult = `-- name: CreateResult :execresult
 INSERT INTO results (athlete_id, meet_id, time, place)
 VALUES (?, ?, ?, ?)
