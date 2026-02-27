@@ -38,7 +38,7 @@ export default function AthleteList() {
             <tr key={athlete.id}>
               <td>{athlete.name}</td>
               <td>{athlete.grade}</td>
-              <td>{athlete.personal_record}</td>
+              <td>{athlete.personalRecord}</td>
             </tr>
           ))}
         </tbody>
