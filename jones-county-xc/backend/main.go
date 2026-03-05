@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 
 	"jones-county-xc/backend/db"
@@ -54,18 +55,29 @@ func main() {
 		})
 	})
 
+	// Route prefix: "" for local dev, "/module3" for production
+	prefix := os.Getenv("ROUTE_PREFIX")
+	api := r.Group(prefix + "/api")
+
 	// Athletes endpoints
-	r.GET("/api/athletes", listAthletes)
-	r.GET("/api/athletes/:id", getAthlete)
+	api.GET("/athletes", listAthletes)
+	api.GET("/athletes/:id", getAthlete)
+	api.POST("/athletes", createAthlete)
+	api.PUT("/athletes/:id", updateAthlete)
+	api.DELETE("/athletes/:id", deleteAthlete)
 
 	// Results endpoints
-	r.GET("/api/results", listResults)
+	api.GET("/results", listResults)
 
 	// Meets endpoints
-	r.GET("/api/meets", listMeets)
-	r.GET("/api/meets/:id/results", getMeetResults)
+	api.GET("/meets", listMeets)
+	api.GET("/meets/:id/results", getMeetResults)
 
-	r.Run(":8080")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+	r.Run(":" + port)
 }
 
 func listAthletes(c *gin.Context) {
@@ -113,6 +125,65 @@ func listMeets(c *gin.Context) {
 		return
 	}
 	c.JSON(http.StatusOK, meets)
+}
+
+func createAthlete(c *gin.Context) {
+	var params db.CreateAthleteParams
+	if err := c.ShouldBindJSON(&params); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	result, err := queries.CreateAthlete(c.Request.Context(), params)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	id, _ := result.LastInsertId()
+	athlete, err := queries.GetAthlete(c.Request.Context(), int32(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusCreated, athlete)
+}
+
+func updateAthlete(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseInt(idParam, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid athlete id"})
+		return
+	}
+	var params db.UpdateAthleteParams
+	if err := c.ShouldBindJSON(&params); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	params.ID = int32(id)
+	if err := queries.UpdateAthlete(c.Request.Context(), params); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	athlete, err := queries.GetAthlete(c.Request.Context(), int32(id))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, athlete)
+}
+
+func deleteAthlete(c *gin.Context) {
+	idParam := c.Param("id")
+	id, err := strconv.ParseInt(idParam, 10, 32)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid athlete id"})
+		return
+	}
+	if err := queries.DeleteAthlete(c.Request.Context(), int32(id)); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "deleted"})
 }
 
 func getMeetResults(c *gin.Context) {

@@ -1,0 +1,17 @@
+[Unit]
+Description=Jones County XC Backend - Module 3
+After=network.target mysql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/jones-county-xc-module3
+ExecStart=/opt/jones-county-xc-module3/jones-county-xc-backend
+Environment=PORT=8081
+Environment=ROUTE_PREFIX=/module3
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

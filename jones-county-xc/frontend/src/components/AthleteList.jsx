@@ -1,8 +1,9 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
+import { API_BASE } from '@/lib/api'
 
 async function fetchAthletes() {
-  const response = await fetch('/api/athletes')
+  const response = await fetch(`${API_BASE}/athletes`)
   if (!response.ok) {
     throw new Error('Failed to fetch athletes')
   }

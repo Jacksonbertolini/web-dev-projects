@@ -1,7 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
+import { API_BASE } from '@/lib/api'
 
 async function fetchMeets() {
-  const response = await fetch('/api/meets')
+  const response = await fetch(`${API_BASE}/meets`)
   if (!response.ok) {
     throw new Error('Failed to fetch meets')
   }
