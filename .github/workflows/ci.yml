@@ -5,6 +5,7 @@ on:
     branches: [module-3-submission]
   pull_request:
     branches: [module-3-submission]
+  workflow_dispatch:
 
 jobs:
   backend:
